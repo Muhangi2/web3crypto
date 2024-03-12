@@ -1,10 +1,14 @@
+// Import hardhat
+const { ethers } = require("hardhat");
+
 const main = async () => {
-  const Transactions = await hre.ethers.getContractFactory("Transactions");
+  // Now you can use ethers
+  const Transactions = await ethers.getContractFactory("Transactions");
   const transactions = await Transactions.deploy();
 
   await transactions.deployed();
 
-  console.log("transactions deployed to:", transaction.address);
+  console.log("transactions deployed to:", transactions.address);
 };
 
 const runMain = async () => {
@@ -16,3 +20,4 @@ const runMain = async () => {
   }
 };
 runMain();
+z
