@@ -11,25 +11,25 @@ const transporter = nodemailer.createTransport({
   service: "Gmail",
   host: "smtp.gmail.com",
   auth: {
-    user: "eliodamutiba@gmail.com",
-    pass: "mgykchtnjhzxiasg",
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
   },
 });
 
 app.post("/send-email", (req, res) => {
   console.log(req.body);
   // Extract data from the request (assuming data is in the request body)
-  const { keyword, amount, message, addressTo } = req.body;
+  const { gmail, amount, message, addressTo } = req.body;
 
   const mailOptions = {
     from: "eliodamutiba@gmail.com",
-    to: "joelofelectronics@gmail.com",
+    to: gmail,
     subject: "Crypto Transaction Notification",
     text: `
             Transaction details:
             Address To: ${addressTo}
             Amount: ${amount} MATIC
-            Keyword: ${keyword}
+            gmail: ${gmail}
             Message: ${message}
         `,
   };
