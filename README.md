@@ -1,5 +1,5 @@
 CryptoCurrency Transaction App
-This is a simple cryptocurrency transaction app that allows users to send cryptocurrency to another account. It is built using [insert technologies/languages/frameworks used].
+This is a simple cryptocurrency transaction app that allows users to send cryptocurrency to another account. It is built using [solidity ,etherjs,javascript,hardhat]
 
 Features
 Send Transaction: Users can send cryptocurrency to another account by providing necessary details such as recipient address, amount, and optional message.
@@ -11,7 +11,7 @@ Clone the repository:
 
 bash
 Copy code
-git clone https://github.com/your_username/cryptocurrency-app.git
+https://github.com/Muhangi2/web3crypto.git
 Install dependencies:
 
 Copy code
@@ -23,20 +23,19 @@ Copy code
 npm start
 Usage
 Open the application in your web browser.
-Sign in or create an account if you haven't already.
+Sign in or create an account on metamask if you haven't already.
 Navigate to the "Send Transaction" section.
 Enter the recipient's address, the amount to send, and an optional message.
 Click the "Send" button to complete the transaction.
 Technologies Used
-Frontend: [insert frontend technologies]
-Backend: [insert backend technologies]
-Database: [insert database technologies]
-Blockchain Integration: [insert blockchain integration technologies]
+Frontend:Reactjs
+Backend: Nodejs
+Blockchain Integration: Matic ethereum
 Contributing
 Contributions are welcome! If you would like to contribute to the development of this project, please follow these steps:
 
 Fork the repository.
-Create a new branch (git checkout -b feature/improvement)
+Create a new branch 
 Make your changes.
 Commit your changes (git commit -am 'Add new feature')
 Push to the branch (git push origin feature/improvement)
