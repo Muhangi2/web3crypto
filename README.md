@@ -1,17 +1,42 @@
-# Krypt - Web 3.0 Blockchain Application
-![Krypt](https://i.ibb.co/DVF4tNW/image.png)
+CryptoCurrency Transaction App
+This is a simple cryptocurrency transaction app that allows users to send cryptocurrency to another account. It is built using [solidity ,etherjs,javascript,hardhat]
 
-### [🌟 Become a top 1% Next.js 13 developer in only one course](https://jsmastery.pro/next13)
-### [🚀 Land your dream programming job in 6 months](https://jsmastery.pro/masterclass)
+Features
+Send Transaction: Users can send cryptocurrency to another account by providing necessary details such as recipient address, amount, and optional message.
+Secure: Utilizes industry-standard encryption and security practices to ensure the safety of user transactions.
+Easy to Use: Simple and intuitive user interface makes it easy for users to navigate and perform transactions.
+Supports Multiple Cryptocurrencies: Supports various cryptocurrencies for transactions.
+Installation
+Clone the repository:
 
-## Introduction
-This is a code repository for the corresponding video tutorial.
+bash
+Copy code
+https://github.com/Muhangi2/web3crypto.git
+Install dependencies:
 
-Using Web 3.0 methodologies, Solidity and Metamask you'll learn how to build a your first real Web 3.0 Application - from start to finish.
+Copy code
+npm install
+Start the application:
 
-Project created in collaboration with Enyel Sequeira: 
-Portfolio - https://www.enyelsequeira.com
-E-mail - enyelsequeira1994@gmail.com
-Want me to cover the project you've created? Send me an e-mail 👌
+sql
+Copy code
+npm start
+Usage
+Open the application in your web browser.
+Sign in or create an account on metamask if you haven't already.
+Navigate to the "Send Transaction" section.
+Enter the recipient's address, the amount to send, and an optional message.
+Click the "Send" button to complete the transaction.
+Technologies Used
+Frontend:Reactjs
+Backend: Nodejs
+Blockchain Integration: Matic ethereum
+Contributing
+Contributions are welcome! If you would like to contribute to the development of this project, please follow these steps:
 
-## Launch your development career with project-based coaching - https://www.jsmastery.pro
+Fork the repository.
+Create a new branch 
+Make your changes.
+Commit your changes (git commit -am 'Add new feature')
+Push to the branch (git push origin feature/improvement)
+Create a new Pull Request.
