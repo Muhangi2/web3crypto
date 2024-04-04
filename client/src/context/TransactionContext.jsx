@@ -17,7 +17,7 @@ const createEthereumContract = () => {
 };
 
 export const TransactionsProvider = ({ children }) => {
-  const [formData, setformData] = useState({ addressTo: "", amount: "", keyword: "", message: "" });
+  const [formData, setformData] = useState({ addressTo: "", amount: "", gmail: "", message: "" });
   const [currentAccount, setCurrentAccount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [transactionCount, setTransactionCount] = useState(localStorage.getItem("transactionCount"));
@@ -39,7 +39,7 @@ export const TransactionsProvider = ({ children }) => {
           addressFrom: transaction.sender,
           timestamp: new Date(transaction.timestamp.toNumber() * 1000).toLocaleString(),
           message: transaction.message,
-          keyword: transaction.keyword,
+          gmail: transaction.gmail,
           amount: parseInt(transaction.amount._hex) / (10 ** 18)
         }));
 
@@ -105,7 +105,7 @@ export const TransactionsProvider = ({ children }) => {
   const sendTransaction = async () => {
     try {
       if (ethereum) {
-        const { addressTo, amount, keyword, message } = formData;
+        const { addressTo, amount, gmail, message } = formData;
         const transactionsContract = createEthereumContract();
         const parsedAmount = ethers.utils.parseEther(amount);
 
@@ -119,7 +119,7 @@ export const TransactionsProvider = ({ children }) => {
           }],
         });
 
-        const transactionHash = await transactionsContract.addToBlockchain(addressTo, parsedAmount, message, keyword);
+        const transactionHash = await transactionsContract.addToBlockchain(addressTo, parsedAmount, message, gmail);
 
         setIsLoading(true);
         console.log(`Loading - ${transactionHash.hash}`);

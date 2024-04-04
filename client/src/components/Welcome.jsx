@@ -24,6 +24,7 @@ const Welcome = () => {
   const { currentAccount, connectWallet, handleChange, sendTransaction, formData, isLoading } = useContext(TransactionContext);
 
   const handleSubmit = async (e) => {
+    console.log("Form data:", formData)
     const { addressTo, amount, gmail, message } = formData;
     e.preventDefault();
   
@@ -61,7 +62,8 @@ const Welcome = () => {
               </p>
             </button>
           )}
-
+        
+        {/* cardfordescribing */}
           <div className="grid sm:grid-cols-3 grid-cols-2 w-full mt-10">
             <div className={`rounded-tl-2xl ${companyCommonStyles}`}>
               Reliability
