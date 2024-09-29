@@ -1,162 +1,212 @@
 import React, { useEffect, useState } from "react";
-import { ethers } from "ethers";
+import Web3 from "web3";
+import { SwisstronikPlugin } from "@swisstronik/web3-plugin-swisstronik";
 
 import { contractABI, contractAddress } from "../utils/constants";
 
-
 export const TransactionContext = React.createContext();
 
-const { ethereum } = window;
-
-const createEthereumContract = () => {
-  const provider = new ethers.providers.Web3Provider(ethereum);
-  const signer = provider.getSigner();
-  const transactionsContract = new ethers.Contract(contractAddress, contractABI, signer);
-
-  return transactionsContract;
-};
-
 export const TransactionsProvider = ({ children }) => {
-  const [formData, setformData] = useState({ addressTo: "", amount: "", gmail: "", message: "" });
+  const [web3, setWeb3] = useState(null);
+  const [contract, setContract] = useState(null);
   const [currentAccount, setCurrentAccount] = useState("");
+  const [balance, setBalance] = useState("0");
+  const [formData, setFormData] = useState({ addressTo: "", amount: "", gmail: "", message: "" });
   const [isLoading, setIsLoading] = useState(false);
-  const [transactionCount, setTransactionCount] = useState(localStorage.getItem("transactionCount"));
   const [transactions, setTransactions] = useState([]);
+  const [error, setError] = useState(null);
 
-  const handleChange = (e, name) => {
-    setformData((prevState) => ({ ...prevState, [name]: e.target.value }));
-  };
+  useEffect(() => {
+    const initializeWeb3 = async () => {
+      if (typeof window.ethereum !== 'undefined') {
+        const web3Instance = new Web3(window.ethereum);
+        web3Instance.registerPlugin(new SwisstronikPlugin("https://json-rpc.testnet.swisstronik.com"));
+        setWeb3(web3Instance);
 
-  const getAllTransactions = async () => {
-    try {
-      if (ethereum) {
-        const transactionsContract = createEthereumContract();
+        const contractInstance = new web3Instance.eth.Contract(contractABI, contractAddress);
+        console.log("Contract instance:", contractInstance);
+        setContract(contractInstance);
 
-        const availableTransactions = await transactionsContract.getAllTransactions();
+        try {
+          const accounts = await web3Instance.eth.requestAccounts();
+          setCurrentAccount(accounts[0]);
+        } catch (error) {
+          console.error("User denied account access");
+        }
 
-        const structuredTransactions = availableTransactions.map((transaction) => ({
-          addressTo: transaction.receiver,
-          addressFrom: transaction.sender,
-          timestamp: new Date(transaction.timestamp.toNumber() * 1000).toLocaleString(),
-          message: transaction.message,
-          gmail: transaction.gmail,
-          amount: parseInt(transaction.amount._hex) / (10 ** 18)
-        }));
-
-        console.log(structuredTransactions);
-
-        setTransactions(structuredTransactions);
+        // Fetch transactions after initializing Web3 and contract
+        await getAllTransactions(web3Instance, contractInstance);
       } else {
-        console.log("Ethereum is not present");
+        console.log('Please install MetaMask!');
       }
-    } catch (error) {
-      console.log(error);
+    };
+
+    initializeWeb3();
+  }, []);
+
+  useEffect(() => {
+    if (currentAccount) {
+      updateBalance();
+    }
+  }, [currentAccount]);
+
+  const updateBalance = async () => {
+    if (web3 && currentAccount) {
+      const balanceWei = await web3.eth.getBalance(currentAccount);
+      const balanceSwtr = web3.utils.fromWei(balanceWei, 'ether');
+      console.log("Current balance:", balanceSwtr, "SWTR");
+      setBalance(balanceSwtr);
     }
   };
 
-  const checkIfWalletIsConnect = async () => {
+  const estimateTransactionCost = async () => {
+    if (!web3 || !contract) throw new Error("Web3 or Contract is not initialized");
+    
+    const { addressTo, amount, gmail, message } = formData;
+    
+    const gasPrice = await web3.eth.getGasPrice();
+    console.log("Current gas price:", web3.utils.fromWei(gasPrice, 'gwei'), "Gwei");
+    const gasLimit = await contract.methods.addToBlockchain(
+      addressTo, 
+      web3.utils.toWei(amount, "ether"), 
+      message, 
+      gmail
+    ).estimateGas({from: currentAccount});
+
+    const gasCost = BigInt(gasPrice) * BigInt(gasLimit);
+    const gasCostSwtr = web3.utils.fromWei(gasCost.toString(), 'ether');
+
+    return gasCostSwtr;
+  };
+
+  const sendTransaction = async () => {
+    setError(null);
+    setIsLoading(true);
     try {
-      if (!ethereum) return alert("Please install MetaMask.");
+      if (!web3 || !contract) throw new Error("Web3 or Contract is not initialized");
+      
+      const { addressTo, amount, gmail, message } = formData;
+      
+      console.log("Current network ID:", await web3.eth.net.getId());
+      console.log("Current account:", currentAccount);
 
-      const accounts = await ethereum.request({ method: "eth_accounts" });
-
-      if (accounts.length) {
-        setCurrentAccount(accounts[0]);
-
-        getAllTransactions();
-      } else {
-        console.log("No accounts found");
+      const networkId = await web3.eth.net.getId();
+      if (networkId !== 1291n) { // Swisstronik Testnet network ID
+        throw new Error(`Wrong network. Please connect to Swisstronik Testnet.`);
       }
+
+      const balance = await web3.eth.getBalance(currentAccount);
+      console.log("Current balance:", web3.utils.fromWei(balance, 'ether'), "SWTR");
+
+      const gasPrice = await web3.eth.getGasPrice();
+      console.log("Current gas price:", web3.utils.fromWei(gasPrice, 'gwei'), "Gwei");
+
+      const gasLimit = await contract.methods.addToBlockchain(
+        addressTo, 
+        web3.utils.toWei(amount, "ether"), 
+        message, 
+        gmail
+      ).estimateGas({from: currentAccount});
+      console.log("Estimated gas limit:", gasLimit);
+
+      const txCost = BigInt(gasPrice) * BigInt(gasLimit);
+      const totalCost = BigInt(web3.utils.toWei(amount, "ether")) + txCost;
+
+      if (BigInt(balance) < totalCost) {
+        throw new Error("Insufficient SWTR for transaction");
+      }
+
+      console.log("Sending transaction...");
+      const receipt = await contract.methods.addToBlockchain(
+        addressTo, 
+        web3.utils.toWei(amount, "ether"), 
+        message, 
+        gmail
+      ).send({ 
+        from: currentAccount,
+        gasPrice: gasPrice,
+        gas: gasLimit
+      });
+
+      console.log(`Transaction confirmed in block ${receipt.blockNumber}`);
+      console.log("Transaction receipt:", receipt);
+      
+      setIsLoading(false);
+      updateBalance();
+      getAllTransactions();
     } catch (error) {
-      console.log(error);
+      console.error("Error in sendTransaction:", error);
+      setError(error.message || "An unknown error occurred");
+      setIsLoading(false);
     }
   };
 
-  const checkIfTransactionsExists = async () => {
+  const getAllTransactions = async (web3Instance, contractInstance) => {
     try {
-      if (ethereum) {
-        const transactionsContract = createEthereumContract();
-        const currentTransactionCount = await transactionsContract.getTransactionCount();
-
-        window.localStorage.setItem("transactionCount", currentTransactionCount);
+      if (!contractInstance) {
+        console.error("Contract is not initialized");
+        return;
       }
+      
+      const availableTransactions = await contractInstance.methods.getAllTransactions().call();
+      console.log("Available transactions:", availableTransactions);
+  
+      const structuredTransactions = availableTransactions.map((transaction) => ({
+        addressFrom: transaction.sender,
+        addressTo: transaction.receiver,
+        amount: web3Instance.utils.fromWei(transaction.amount.toString(), "ether") + " SWTR",
+        message: transaction.message,
+        timestamp: new Date(Number(transaction.timestamp) * 1000).toLocaleString(),
+        keyword: transaction.keyword
+      }));
+      console.log("Structured transactions:", structuredTransactions);
+      setTransactions(structuredTransactions);
     } catch (error) {
-      console.log(error);
-
-      throw new Error("No ethereum object");
+      console.error("Error fetching transactions:", error);
     }
   };
 
   const connectWallet = async () => {
     try {
-      if (!ethereum) return alert("Please install MetaMask.");
+      if (!web3) throw new Error("Web3 is not initialized");
 
-      const accounts = await ethereum.request({ method: "eth_requestAccounts", });
-
+      const accounts = await web3.eth.requestAccounts();
       setCurrentAccount(accounts[0]);
-      window.location.reload();
     } catch (error) {
-      console.log(error);
-
-      throw new Error("No ethereum object");
+      console.error("Error connecting wallet:", error);
+      setError(error.message || "Failed to connect wallet");
     }
   };
 
-  const sendTransaction = async () => {
+  const getAddressBalance = async (address) => {
+    if (!web3) throw new Error("Web3 is not initialized");
+    
     try {
-      if (ethereum) {
-        const { addressTo, amount, gmail, message } = formData;
-        const transactionsContract = createEthereumContract();
-        const parsedAmount = ethers.utils.parseEther(amount);
-
-        await ethereum.request({
-          method: "eth_sendTransaction",
-          params: [{
-            from: currentAccount,
-            to: addressTo,
-            gas: "0x5208",
-            value: parsedAmount._hex,
-          }],
-        });
-
-        const transactionHash = await transactionsContract.addToBlockchain(addressTo, parsedAmount, message, gmail);
-
-        setIsLoading(true);
-        console.log(`Loading - ${transactionHash.hash}`);
-        await transactionHash.wait();
-        console.log(`Success - ${transactionHash.hash}`);
-        setIsLoading(false);
-
-        const transactionsCount = await transactionsContract.getTransactionCount();
-
-        setTransactionCount(transactionsCount.toNumber());
-        window.location.reload();
-      } else {
-        console.log("No ethereum object");
-      }
+      const balanceWei = await web3.eth.getBalance(address);
+      const balanceSwtr = web3.utils.fromWei(balanceWei, 'ether');
+      console.log(`Balance of ${address}:`, balanceSwtr, "SWTR");
+      return balanceSwtr;
+      
     } catch (error) {
-      console.log(error);
-
-      throw new Error("No ethereum object");
+      console.error("Error fetching address balance:", error);
+      throw error;
     }
   };
-
-  useEffect(() => {
-    checkIfWalletIsConnect();
-    checkIfTransactionsExists();
-  }, [transactionCount]);
 
   return (
     <TransactionContext.Provider
       value={{
-        transactionCount,
         connectWallet,
-        transactions,
         currentAccount,
-        isLoading,
-        sendTransaction,
-        handleChange,
+        balance,
         formData,
+        setFormData,
+        handleChange: (e, name) => setFormData((prevState) => ({ ...prevState, [name]: e.target.value })),
+        sendTransaction,
+        transactions,
+        getAllTransactions,
+        isLoading,
+        error
       }}
     >
       {children}

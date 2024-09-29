@@ -21,7 +21,7 @@ const Input = ({ placeholder, name, type, value, handleChange }) => (
 );
 
 const Welcome = () => {
-  const { currentAccount, connectWallet, handleChange, sendTransaction, formData, isLoading } = useContext(TransactionContext);
+  const { currentAccount, connectWallet, handleChange, sendTransaction, formData, isLoading, balance } = useContext(TransactionContext);
 
   const handleSubmit = async (e) => {
     console.log("Form data:", formData)
@@ -32,7 +32,7 @@ const Welcome = () => {
   
     try {
       await sendTransaction();
-       const response = await axios.post('http://localhost:5000/send-email', formData);
+       const response = await axios.post('http://localhost:3000/send-email', formData);
       console.log(response.data);
       console.log("Transaction sent and email notification triggered!");
     } catch (error) {
@@ -45,10 +45,10 @@ const Welcome = () => {
       <div className="flex mf:flex-row flex-col items-start justify-between md:p-20 py-12 px-4">
         <div className="flex flex-1 justify-start items-start flex-col mf:mr-10">
           <h1 className="text-3xl sm:text-5xl text-white text-gradient py-1">
-            Send Crypto <br /> across the world
+            Send SWTR Crypto <br /> across the world
           </h1>
           <p className="text-left mt-5 text-white font-light md:w-9/12 w-11/12 text-base">
-            Explore the crypto world. Buy and sell cryptocurrencies easily on Krypto.
+            Explore the crypto world.Make Sure you are conncted to the SWTR network before you send SWTR cryptocurrency.
           </p>
           {!currentAccount && (
             <button
@@ -92,18 +92,19 @@ const Welcome = () => {
                 <BsInfoCircle fontSize={17} color="#fff" />
               </div>
               <div>
+                
                 <p className="text-white font-light text-sm">
                   {shortenAddress(currentAccount)}
                 </p>
                 <p className="text-white font-semibold text-lg mt-1">
-                  Ethereum
+                  Balance:{ balance}
                 </p>
               </div>
             </div>
           </div>
           <div className="p-5 sm:w-96 w-full flex flex-col justify-start items-center blue-glassmorphism">
             <Input placeholder="Address To" name="addressTo" type="text" handleChange={handleChange} />
-            <Input placeholder="Amount (MATIC)" name="amount" type="number" handleChange={handleChange} />
+            <Input placeholder="Amount (SWTR)" name="amount" type="number" handleChange={handleChange} />
             <Input placeholder="gmail" name="gmail" type="email" handleChange={handleChange} />
             <Input placeholder="Enter Message" name="message" type="text" handleChange={handleChange} />
 
