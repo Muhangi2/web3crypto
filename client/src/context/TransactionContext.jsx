@@ -91,6 +91,7 @@ export const TransactionsProvider = ({ children }) => {
       console.log("Current account:", currentAccount);
 
       const networkId = await web3.eth.net.getId();
+      console.log("Current network ID:", networkId);
       if (networkId !== 1291n) { // Swisstronik Testnet network ID
         throw new Error(`Wrong network. Please connect to Swisstronik Testnet.`);
       }
@@ -101,39 +102,48 @@ export const TransactionsProvider = ({ children }) => {
       const gasPrice = await web3.eth.getGasPrice();
       console.log("Current gas price:", web3.utils.fromWei(gasPrice, 'gwei'), "Gwei");
 
-      const gasLimit = await contract.methods.addToBlockchain(
-        addressTo, 
-        web3.utils.toWei(amount, "ether"), 
-        message, 
-        gmail
-      ).estimateGas({from: currentAccount});
-      console.log("Estimated gas limit:", gasLimit);
+    const txObject={
+      from: currentAccount,
+      to: addressTo,
+      value: web3.utils.toWei(amount, "ether"),
+      gasPrice: gasPrice
+    }
 
-      const txCost = BigInt(gasPrice) * BigInt(gasLimit);
-      const totalCost = BigInt(web3.utils.toWei(amount, "ether")) + txCost;
+  // Estimate gas
+  const gasLimit = await web3.eth.estimateGas(txObject);
+  txObject.gas = gasLimit;
 
-      if (BigInt(balance) < totalCost) {
-        throw new Error("Insufficient SWTR for transaction");
-      }
+  console.log("Estimated gas limit:", gasLimit);
 
-      console.log("Sending transaction...");
-      const receipt = await contract.methods.addToBlockchain(
-        addressTo, 
-        web3.utils.toWei(amount, "ether"), 
-        message, 
-        gmail
-      ).send({ 
-        from: currentAccount,
-        gasPrice: gasPrice,
-        gas: gasLimit
-      });
+  const txCost = BigInt(gasPrice) * BigInt(gasLimit);
+  const totalCost = BigInt(web3.utils.toWei(amount, "ether")) + txCost;
 
-      console.log(`Transaction confirmed in block ${receipt.blockNumber}`);
-      console.log("Transaction receipt:", receipt);
-      
-      setIsLoading(false);
-      updateBalance();
-      getAllTransactions();
+  if (BigInt(balance) < totalCost) {
+    throw new Error("Insufficient ETH for transaction");
+  }
+
+  console.log("Sending transaction...");
+  const receipt = await web3.eth.sendTransaction(txObject,undefined, {
+    checkRevertBeforeSending: false,
+  });
+  console.log(`Transaction confirmed in block ${receipt.blockNumber}`);
+  console.log("Transaction receipt:", receipt);
+
+  // Add transaction to blockchain through smart contract
+  await contract.methods.addToBlockchain(
+    addressTo, 
+    web3.utils.toWei(amount, "ether"), 
+    message, 
+    gmail
+  ).send({ 
+    from: currentAccount,
+    gasPrice: gasPrice
+  });
+  
+  setIsLoading(false);
+  updateBalance();
+  getAllTransactions();
+  
     } catch (error) {
       console.error("Error in sendTransaction:", error);
       setError(error.message || "An unknown error occurred");
